@@ -43,7 +43,7 @@ async function load() {
   const list = await rest(`https://api.github.com/users/${LOGIN}/repos?type=owner&sort=pushed&per_page=100`);
   const repos = [];
   for (const r of list.filter(r => !r.fork)) {
-    const languages = r.size > 0 ? await rest(r.languages_url) : {};
+    const languages = await rest(r.languages_url); // r.size can lag behind at 0 for fresh repos
     repos.push({ name: r.name, description: r.description, url: r.html_url, stars: r.stargazers_count, forks: r.forks_count,
       pushedAt: r.pushed_at, archived: r.archived, language: r.language, languages });
   }
