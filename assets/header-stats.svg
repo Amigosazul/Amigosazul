@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="56" viewBox="0 0 200 56" shape-rendering="crispEdges" role="img" aria-label="STATS"><title>STATS</title><style>
+.bob{animation:bob 1.2s infinite}
+@keyframes bob{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-6px)}}
+.blink{animation:blink 1s infinite}
+@keyframes blink{0%,59%{opacity:1}60%,100%{opacity:0}}
+.tw1{animation:tw 2.4s infinite}.tw2{animation:tw 3.1s .7s infinite}.tw3{animation:tw 1.9s 1.3s infinite}
+@keyframes tw{0%,69%{opacity:1}70%,100%{opacity:.2}}
+.xp{transform-box:fill-box;transform-origin:left center;animation:xp 6s steps(1) infinite}
+@keyframes xp{0%{transform:scaleX(.15)}15%{transform:scaleX(.3)}30%{transform:scaleX(.45)}45%{transform:scaleX(.6)}60%{transform:scaleX(.72)}75%,100%{transform:scaleX(.72)}}
+.drift{animation:drift 24s linear infinite}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-960px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style><path fill="#000000" d="M4 0h192v4h4v48h-4v4h-192v-4h-4v-48h4z"/><path fill="#1d2b53" d="M8 4h184v4h4v40h-4v4h-184v-4h-4v-40h4z"/><path fill="#00e436" d="M40 14h4v4h-4zM40 18h4v4h-4zM28 22h4v4h-4zM40 22h4v4h-4zM28 26h4v4h-4zM40 26h4v4h-4zM16 30h4v4h-4zM28 30h4v4h-4zM40 30h4v4h-4zM16 34h4v4h-4zM28 34h4v4h-4zM40 34h4v4h-4zM16 38h28v4h-28z"/><path fill="#10173a" d="M68 18h16v4h-16zM64 22h4v4h-4zM64 26h4v4h-4zM68 30h12v4h-12zM80 34h4v4h-4zM80 38h4v4h-4zM64 42h16v4h-16zM88 18h20v4h-20zM96 22h4v4h-4zM96 26h4v4h-4zM96 30h4v4h-4zM96 34h4v4h-4zM96 38h4v4h-4zM96 42h4v4h-4zM116 18h12v4h-12zM112 22h4v4h-4zM128 22h4v4h-4zM112 26h4v4h-4zM128 26h4v4h-4zM112 30h20v4h-20zM112 34h4v4h-4zM128 34h4v4h-4zM112 38h4v4h-4zM128 38h4v4h-4zM112 42h4v4h-4zM128 42h4v4h-4zM136 18h20v4h-20zM144 22h4v4h-4zM144 26h4v4h-4zM144 30h4v4h-4zM144 34h4v4h-4zM144 38h4v4h-4zM144 42h4v4h-4zM164 18h16v4h-16zM160 22h4v4h-4zM160 26h4v4h-4zM164 30h12v4h-12zM176 34h4v4h-4zM176 38h4v4h-4zM160 42h16v4h-16z"/><path fill="#fff1e8" d="M64 14h16v4h-16zM60 18h4v4h-4zM60 22h4v4h-4zM64 26h12v4h-12zM76 30h4v4h-4zM76 34h4v4h-4zM60 38h16v4h-16zM84 14h20v4h-20zM92 18h4v4h-4zM92 22h4v4h-4zM92 26h4v4h-4zM92 30h4v4h-4zM92 34h4v4h-4zM92 38h4v4h-4zM112 14h12v4h-12zM108 18h4v4h-4zM124 18h4v4h-4zM108 22h4v4h-4zM124 22h4v4h-4zM108 26h20v4h-20zM108 30h4v4h-4zM124 30h4v4h-4zM108 34h4v4h-4zM124 34h4v4h-4zM108 38h4v4h-4zM124 38h4v4h-4zM132 14h20v4h-20zM140 18h4v4h-4zM140 22h4v4h-4zM140 26h4v4h-4zM140 30h4v4h-4zM140 34h4v4h-4zM140 38h4v4h-4zM160 14h16v4h-16zM156 18h4v4h-4zM156 22h4v4h-4zM160 26h12v4h-12zM172 30h4v4h-4zM172 34h4v4h-4zM156 38h16v4h-16z"/></svg>
