@@ -33,18 +33,6 @@
   <img src="https://img.shields.io/badge/OpenAI_API-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI API" />
 </p>
 
-## 🗺️ Learning Path · 学习路线
-
-| Stage 阶段 | Topic 内容 | Status 状态 |
-| :--- | :--- | :---: |
-| 1 | Python basics · Python 基础语法、数据结构、函数、类、模块 | ✅ |
-| 2 | Java basics · Java 入门 | 🔄 |
-| 3 | LangChain core · LangChain 核心：Model / Prompt / Chain | 🔄 |
-| 4 | RAG · 检索增强生成 | ⏳ |
-| 5 | AI Agents · 智能体与工具调用 | ⏳ |
-
-<sub>✅ Done 已完成 · 🔄 In progress 进行中 · ⏳ Planned 计划中</sub>
-
 ## 📌 Featured Projects · 精选项目
 
 <p align="center">
