@@ -1,4 +1,4 @@
-name: Contribution black hole
+name: Render profile
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [scripts/blackhole.js, .github/workflows/blackhole.yml]
+    paths: [scripts/**, .github/workflows/**]
 
 permissions:
   contents: write
@@ -19,13 +19,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Render SVG
-        run: node scripts/blackhole.js "${{ github.repository_owner }}" assets/blackhole.svg
+      - name: Render README and images from GitHub data
+        run: node scripts/render.js "${{ github.repository_owner }}" .
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/blackhole.svg
-          git diff --cached --quiet || (git commit -m "Update contribution black hole" && git push)
+          git add -A README.md assets
+          git diff --cached --quiet || (git commit -m "Update profile from GitHub data" && git push)
