@@ -30,7 +30,7 @@ STATUS  : Issues welcome     // 欢迎来仓库提 Issue、交流学习心得
 
 <img src="./assets/header-inventory.svg" height="50" alt="INVENTORY · 装备栏" />
 
-<p align="center">
+<p>
   <img src="https://skillicons.dev/icons?i=python,java,git,github,vscode,linux,md&theme=light" alt="tech stack" />
   <br />
   <img src="https://img.shields.io/badge/LangChain-1d2b53?style=for-the-badge&logo=langchain&logoColor=00e436" alt="LangChain" />
@@ -54,6 +54,12 @@ STATUS  : Issues welcome     // 欢迎来仓库提 Issue、交流学习心得
 <p align="center">
   <img height="150" src="https://github-readme-stats.vercel.app/api?username=Amigosazul&show_icons=true&count_private=true&bg_color=ffffff&title_color=1d2b53&text_color=5f574f&icon_color=29adff&ring_color=ff77a8&border_color=1d2b53&border_radius=0" alt="GitHub stats" />
   <img height="150" src="https://streak-stats.demolab.com?user=Amigosazul&background=ffffff&border=1d2b53&stroke=c2c3c7&ring=ff77a8&fire=ffa300&currStreakNum=1d2b53&sideNums=1d2b53&currStreakLabel=ff004d&sideLabels=5f574f&dates=83769c&border_radius=0" alt="GitHub streak" />
+</p>
+
+<img src="./assets/header-blackhole.svg" height="50" alt="BLACK HOLE · 贡献黑洞" />
+
+<p align="center">
+  <img src="./assets/blackhole.svg" width="100%" alt="Contribution map being pulled into a pixel black hole" />
 </p>
 
 <br />
