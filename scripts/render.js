@@ -57,6 +57,7 @@ async function load() {
   };
 }
 
+
 // ---------------- derived stats ----------------
 const LANG_COLORS = {
   Python: '#3572A5', Java: '#b07219', JavaScript: '#f1e05a', TypeScript: '#3178c6', HTML: '#e34c26', CSS: '#563d7c',
@@ -71,8 +72,10 @@ const CLASSES = {
   Shell: 'SHELL SUMMONER', Vue: 'VUE ENCHANTER', Dart: 'DART HUNTER',
 };
 const langColor = n => LANG_COLORS[n] || C.lav;
+const SHORT = { TypeScript: 'TS', JavaScript: 'JS', 'Jupyter Notebook': 'JUPYTER', PowerShell: 'PWSH', Dockerfile: 'DOCKER', Markdown: 'MD' };
+const shortName = n => SHORT[n] || n;
 
-function derive(d) {
+function derive(d, now) {
   const { user, activity } = d;
   // the profile repo only holds this generator, so it is left out of languages and quests
   const isProfile = r => r.name.toLowerCase() === user.login.toLowerCase();
@@ -95,11 +98,32 @@ function derive(d) {
   const contrib = activity.calendar.totalContributions;
   const xp = contrib * 10 + stars * 50 + user.publicRepos * 20 + user.followers * 20;
   const lv = Math.floor(Math.sqrt(xp / 50)) + 1, cur = 50 * (lv - 1) ** 2, next = 50 * lv ** 2;
+  const years = (now - Date.parse(user.createdAt)) / (365.25 * 864e5);
+
+  // [name, requirement, unlocked, ribbon colour]
+  const achievements = [
+    ['STARTER', '1 REPO', repos.length >= 1, C.blue],
+    ['BUILDER', '5 REPOS', repos.length >= 5, C.blue],
+    ['POLYGLOT', '3 LANGUAGES', langs.length >= 3, C.purple],
+    ['STARRED', '1 STAR', stars >= 1, C.orange],
+    ['ALLSTAR', '10 STARS', stars >= 10, C.orange],
+    ['ON FIRE', '7-DAY RUN', longest >= 7, C.red],
+    ['MARATHON', '30-DAY RUN', longest >= 30, C.red],
+    ['GRINDER', '100 CONTRIBS', contrib >= 100, C.green],
+    ['TEAM UP', 'OPEN A PR', activity.prs >= 1, C.purple],
+    ['REPORTER', 'OPEN ISSUE', activity.issues >= 1, C.green],
+    ['FAMOUS', '10 FOLLOWERS', user.followers >= 10, C.pink],
+    ['VETERAN', '3 YEARS IN', years >= 3, C.pink],
+  ];
 
   const quests = repos.slice(0, 4);
   const displayName = user.name && P.canPixel(user.name) ? user.name : user.login;
-  return { ...d, langs, cls, stars, contrib, xp, lv, cur, next, longest, current, quests, displayName };
+  return { ...d, langs, cls, stars, contrib, xp, lv, cur, next, longest, current, quests, displayName, achievements };
 }
+
+// Cards are drawn on a 640px canvas (634 + 6px shadow) and shown at that size, so on a
+// phone they shrink to roughly half. Text is kept at k>=3 (21px) wherever it matters.
+const CW = 634;
 
 // ---------------- images ----------------
 function banner(s) {
@@ -114,47 +138,45 @@ function banner(s) {
 
   const tx = 230, title = P.up(s.displayName);
   const k = Math.max(2, Math.min(6, Math.floor(560 / (title.length * 7))));
-  b += P.plain('PLAYER 1', tx, 36, 3, C.red);
-  b += P.logo(title, tx, 66, k, C.yellow);
-  b += P.plain(P.fit(`CLASS: ${s.cls}`, 3, 580), tx, 144, 3, INK);
+  b += P.plain('PLAYER 1', tx, 30, 3, C.red);
+  b += P.logo(title, tx, 58, k, C.yellow);
+  b += P.plain(P.fit(s.cls, 4, 560), tx, 120, 4, INK);
   const year = s.user.createdAt.slice(0, 4), n = s.user.publicRepos, f = s.user.followers;
-  b += P.plain(P.fit(`JOINED ${year} / ${n} REPO${n === 1 ? '' : 'S'} / ${f} FOLLOWER${f === 1 ? '' : 'S'}`, 2, 600), tx, 180, 2, C.grey);
+  b += P.plain(P.fit(`SINCE ${year} / ${n} REPO${n === 1 ? '' : 'S'} / ${f} FAN${f === 1 ? '' : 'S'}`, 3, 680), tx, 164, 3, C.grey);
   const lvText = `LV ${s.lv}`;
-  b += P.plain(lvText, tx, 214, 3, INK);
-  const bx = tx + P.textW(lvText, 3) + 18, bw = 260, by = 210, bh = 26;
+  b += P.plain(lvText, tx, 206, 4, INK);
+  const bx = tx + P.textW(lvText, 4) + 18, bw = 220, by = 204, bh = 28;
   const p = Math.max(0.02, Math.min(1, (s.xp - s.cur) / (s.next - s.cur)));
   b += P.box(bx - 4, by - 4, bw + 8, bh + 8, 4, INK) + `<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="${C.paper}"/>`;
   b += `<rect class="grow" x="${bx}" y="${by}" width="${Math.round(bw * p)}" height="${bh}" fill="${C.green}"/><rect class="grow" x="${bx}" y="${by}" width="${Math.round(bw * p)}" height="6" fill="#8dffae"/>`;
-  b += P.plain(`${s.xp}/${s.next} XP`, bx + bw + 16, 217, 2, INK);
-  b += P.plain('PRESS START', W - P.textW('PRESS START', 2) - 30, 250 - 24, 2, C.red, 'blink');
+  b += P.plain(P.fit(`${s.xp}/${s.next} XP`, 3, W - bx - bw - 40), bx + bw + 16, 208, 3, INK);
   return P.svg(W, H, b, `${s.displayName}: level ${s.lv} ${s.cls}`);
 }
 
 function player(s) {
-  const u = s.user, w = 874;
+  const u = s.user, w = CW;
   const rows = [
-    ['NAME', s.displayName], ['CLASS', s.cls], ['LEVEL', `${s.lv}  (${s.xp} XP)`], ['JOINED', u.createdAt.slice(0, 10)],
-    ['REPOS', `${u.publicRepos} PUBLIC`], ['PARTY', `${u.followers} FOLLOWERS / ${u.following} FOLLOWING`],
+    ['CLASS', s.cls], ['LEVEL', `${s.lv} / ${s.xp} XP`], ['SINCE', u.createdAt.slice(0, 10)],
+    ['REPOS', `${u.publicRepos} PUBLIC`], ['FANS', `${u.followers}`], ['FOLLOWS', `${u.following}`],
   ];
   const free = [];
   if (u.location) free.push(['FROM', u.location]);
   if (u.bio) free.push(['BIO', u.bio]);
-  const h = Math.max(234, 30 + (rows.length + free.length) * 32 + 12);
+  const rowH = 38, h = 92 + (rows.length + free.length) * rowH + 10;
   let b = P.win(0, 0, w, h, C.paper);
-  // portrait
-  const px = 24, py = 24, pw = 150, ph = h - 48;
-  b += P.box(px, py, pw, ph, 4, INK) + `<clipPath id="pt"><path d="${P.boxD(px + 4, py + 4, pw - 8, ph - 8, 2)}"/></clipPath><g clip-path="url(#pt)">`;
-  b += P.skyBands(px, py, pw, ph - 30) + P.ground(pw + px, py + ph - 30, 30, 5) + P.robot(px + 27, py + ph - 34 - P.ROBOT.length * 6, 6) + '</g>';
-  // rows
-  const lx = 204, vx = 330;
-  let y = 30;
+  // name plate with a small robot
+  b += `<rect x="4" y="4" width="${w - 8}" height="68" fill="${C.palePink}"/><rect x="4" y="72" width="${w - 8}" height="4" fill="${INK}"/>`;
+  b += P.robot(22, 10, 3, 'bob');
+  b += P.plain(P.fit(s.displayName, 5, w - 110), 84, 21, 5, INK);
+  const lx = 24, vx = 200;
+  let y = 96;
   for (const [label, value] of rows) {
-    b += P.plain(label, lx, y + 4, 2, C.grey) + P.plain(P.fit(value, 3, w - vx - 30), vx, y, 3, INK);
-    y += 32;
+    b += P.plain(label, lx, y, 3, C.grey) + P.plain(P.fit(value, 3, w - vx - 24), vx, y, 3, INK);
+    y += rowH;
   }
   for (const [label, value] of free) {
-    b += P.plain(label, lx, y + 4, 2, C.grey) + P.sysText(P.clip(value, 18, w - vx - 30), vx, y + 17, 18, INK, 600);
-    y += 32;
+    b += P.plain(label, lx, y, 3, C.grey) + P.sysText(P.clip(value, 22, w - vx - 24), vx, y + 19, 22, INK, 600);
+    y += rowH;
   }
   return P.svg(w + 6, h + 6, b, `${s.displayName} · ${s.cls} · level ${s.lv}`);
 }
@@ -162,92 +184,117 @@ function player(s) {
 const GEM = ['..KKKKK..', '.KLCCCCK.', 'KLCCCCCCK', 'KCCCCCCDK', '.KCCCCDK.', '..KCCDK..', '...KDK...', '....K....'];
 const darken = (hex, f) => '#' + [1, 3, 5].map(i => Math.round(parseInt(hex.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0')).join('');
 function inventory(s) {
-  const w = 874, h = 204, slot = 88, gap = 16, x0 = 24, y0 = 56;
+  const w = CW, slot = 100, col = 148, x0 = 24, y0 = 60, rowH = 178;
+  const n = s.langs.length > 4 ? 8 : 4;
+  const h = y0 + (n / 4) * rowH + (s.langs.length ? 0 : 30);
   let b = P.win(0, 0, w, h, C.paper);
-  b += P.plain('LANGUAGES BY CODE SIZE', x0, 22, 2, C.grey);
-  for (let i = 0; i < 8; i++) {
-    const x = x0 + i * (slot + gap), l = s.langs[i];
-    b += P.box(x, y0, slot, slot, 4, l ? INK : C.lgrey) + P.box(x + 4, y0 + 4, slot - 8, slot - 8, 2, C.slot);
+  b += P.plain('LANGUAGES', x0, 24, 3, C.grey);
+  for (let i = 0; i < n; i++) {
+    const x = x0 + (i % 4) * col, y = y0 + Math.floor(i / 4) * rowH, l = s.langs[i];
+    b += P.box(x, y, slot, slot, 4, l ? INK : C.lgrey) + P.box(x + 4, y + 4, slot - 8, slot - 8, 2, C.slot);
     if (!l) continue;
-    const col = /^#[0-9a-f]{6}$/i.test(l.color) ? l.color : C.lav;
-    b += `<g class="${i === 0 ? 'bob' : ''}">${P.sprite(GEM, { K: INK, L: C.paper, C: col, D: darken(col, 0.6) }, x + 17, y0 + 20, 6)}</g>`;
-    b += P.plain(P.fit(l.name, 2, slot), x, y0 + slot + 10, 2, INK);
-    b += P.plain(l.pct < 1 ? '<1%' : `${l.pct.toFixed(l.pct < 10 ? 1 : 0)}%`, x, y0 + slot + 30, 2, C.grey);
+    const c = /^#[0-9a-f]{6}$/i.test(l.color) ? l.color : C.lav;
+    b += `<g class="${i === 0 ? 'bob' : ''}">${P.sprite(GEM, { K: INK, L: C.paper, C: c, D: darken(c, 0.6) }, x + 23, y + 22, 6)}</g>`;
+    b += P.plain(P.fit(shortName(l.name), 3, col - 8), x, y + slot + 12, 3, INK);
+    b += P.plain(l.pct < 1 ? '<1%' : `${l.pct.toFixed(l.pct < 10 ? 1 : 0)}%`, x, y + slot + 42, 3, C.grey);
   }
-  if (!s.langs.length) b += P.plain('EMPTY INVENTORY: PUSH CODE TO A PUBLIC REPO TO COLLECT GEMS', x0, y0 + slot + 20, 2, C.grey);
+  if (!s.langs.length) b += P.plain('EMPTY: PUSH SOME PUBLIC CODE', x0, y0 + slot + 20, 3, C.grey);
   return P.svg(w + 6, h + 6, b, 'Languages: ' + (s.langs.map(l => `${l.name} ${l.pct.toFixed(1)}%`).join(', ') || 'none'));
 }
 
 const SCROLL = ['.KKKKKKKKKK.', 'KPPPPPPPPPPK', 'KPKKKKKKKKPK', '.KPPPPPPPPK.', '.KPKKKKKPPK.', '.KPPPPPPPPK.',
   '.KPKKKKKKPK.', '.KPPPPPPPPK.', '.KPKKKPPPPK.', 'KPPPPPPPPPPK', 'KPKKKKKKKKPK', '.KKKKKKKKKK.'];
-function emptyQuest() {
-  const w = 874, h = 144;
+function band(w, left, tag, tagColor, tagBlink) {
+  let b = `<rect x="4" y="4" width="${w - 8}" height="44" fill="${C.palePink}"/><rect x="4" y="48" width="${w - 8}" height="4" fill="${INK}"/>`;
+  b += P.plain(left, 22, 16, 3, C.red);
+  if (tag) {
+    const tw = P.textW(tag, 3);
+    b += P.box(w - tw - 52, 9, tw + 32, 34, 4, INK) + P.box(w - tw - 48, 13, tw + 24, 26, 2, tagColor);
+    b += P.plain(tag, w - tw - 36, 16, 3, INK, tagBlink ? 'blink' : '');
+  }
+  return b;
+}
+function quest(r, i, now) {
+  const w = CW, h = 222, x = 100;
   let b = P.win(0, 0, w, h, C.paper);
-  b += `<rect x="4" y="4" width="${w - 8}" height="36" fill="${C.palePink}"/><rect x="4" y="40" width="${w - 8}" height="4" fill="${INK}"/>`;
-  b += P.plain('QUEST BOARD', 24, 15, 2, C.red);
-  b += P.sprite(SCROLL, { K: INK, P: C.paleYellow }, 30, 60, 5);
-  b += P.plain('NO QUESTS YET', 120, 58, 3, INK);
-  b += P.plain('PUBLIC REPOSITORIES WILL SHOW UP HERE AUTOMATICALLY', 120, 98, 2, C.grey);
-  b += P.plain('...', 120, 118, 2, C.grey, 'blink');
+  const active = now - Date.parse(r.pushedAt) < 30 * 864e5;
+  b += band(w, `QUEST ${String(i + 1).padStart(2, '0')}`, active ? 'ACTIVE' : 'PAUSED', active ? C.green : C.lgrey, active);
+  b += P.sprite(SCROLL, { K: INK, P: C.paleYellow }, 24, 72, 5);
+  b += P.plain(P.fit(r.name, 3, w - x - 24), x, 70, 3, INK);
+  b += r.description ? P.sysText(P.clip(r.description, 20, w - x - 24), x, 124, 20, C.grey) : P.sysText('No description', x, 124, 20, C.lgrey);
+  let bx = x;
+  const y = 144;
+  if (r.language) {
+    b += P.box(bx, y, 20, 20, 2, INK) + `<rect x="${bx + 4}" y="${y + 4}" width="12" height="12" fill="${langColor(r.language)}"/>`;
+    b += P.plain(P.fit(r.language, 3, 200), bx + 30, y, 3, INK);
+    bx += 30 + P.textW(P.fit(r.language, 3, 200), 3) + 26;
+  }
+  b += P.icon('star', bx, y, 3, C.orange) + P.plain(String(r.stars), bx + 28, y, 3, INK);
+  bx += 28 + P.textW(String(r.stars), 3) + 24;
+  b += P.icon('fork', bx, y, 3, C.lav) + P.plain(String(r.forks), bx + 22, y, 3, INK);
+  b += P.plain(`UPDATED ${r.pushedAt.slice(0, 10)}`, x, 180, 3, C.grey);
+  return P.svg(w + 6, h + 6, b, `Quest ${i + 1}: ${r.name}${r.description ? ' - ' + r.description : ''}`);
+}
+function emptyQuest() {
+  const w = CW, h = 178;
+  let b = P.win(0, 0, w, h, C.paper) + band(w, 'QUEST BOARD');
+  b += P.sprite(SCROLL, { K: INK, P: C.paleYellow }, 24, 72, 5);
+  b += P.plain('NO QUESTS YET', 100, 72, 3, INK);
+  b += P.plain('PUBLIC REPOS SHOW UP HERE', 100, 108, 3, C.grey);
+  b += P.plain('...', 100, 138, 3, C.grey, 'blink');
   return P.svg(w + 6, h + 6, b, 'No quests yet');
 }
 
-function quest(r, i, now) {
-  const w = 874, h = 144;
-  let b = P.win(0, 0, w, h, C.paper);
-  b += `<rect x="4" y="4" width="${w - 8}" height="36" fill="${C.palePink}"/><rect x="4" y="40" width="${w - 8}" height="4" fill="${INK}"/>`;
-  b += P.plain(`QUEST ${String(i + 1).padStart(2, '0')}`, 24, 15, 2, C.red);
-  const active = now - Date.parse(r.pushedAt) < 30 * 864e5;
-  const tag = active ? 'ACTIVE' : 'PAUSED', tw = P.textW(tag, 2);
-  b += P.box(w - tw - 56, 8, tw + 36, 28, 4, INK) + P.box(w - tw - 52, 12, tw + 28, 20, 2, active ? C.green : C.lgrey);
-  b += P.plain(tag, w - tw - 38, 15, 2, INK, active ? 'blink' : '');
-  b += P.sprite(SCROLL, { K: INK, P: C.paleYellow }, 30, 60, 5);
-  const x = 120;
-  b += P.plain(P.fit(r.name, 3, w - x - 30), x, 58, 3, INK);
-  b += r.description ? P.sysText(P.clip(r.description, 16, w - x - 30), x, 104, 16, C.grey) : P.sysText('No description', x, 104, 16, C.lgrey);
-  let bx = x;
-  const y = 118;
-  if (r.language) {
-    b += P.box(bx, y - 1, 16, 16, 2, INK) + `<rect x="${bx + 3}" y="${y + 2}" width="10" height="10" fill="${langColor(r.language)}"/>`;
-    b += P.plain(r.language, bx + 24, y, 2, INK);
-    bx += 24 + P.textW(P.up(r.language), 2) + 28;
-  }
-  b += P.icon('star', bx, y, 2, C.orange) + P.plain(String(r.stars), bx + 20, y, 2, INK);
-  bx += 20 + P.textW(String(r.stars), 2) + 24;
-  b += P.icon('fork', bx, y, 2, C.lav) + P.plain(String(r.forks), bx + 16, y, 2, INK);
-  const upd = `UPDATED ${r.pushedAt.slice(0, 10)}`;
-  b += P.plain(upd, w - 28 - P.textW(upd, 2), y, 2, C.grey);
-  return P.svg(w + 6, h + 6, b, `Quest ${i + 1}: ${r.name}${r.description ? ' - ' + r.description : ''}`);
-}
-
 function stats(s) {
-  const w = 874, h = 272, tw = 196, th = 84, gap = 12, x0 = 24;
+  const w = CW, tw = 285, th = 92, gap = 16, x0 = 24, y0 = 24;
   const a = s.activity;
   const tiles = [
-    ['calendar', C.green, s.contrib, 'CONTRIBUTIONS'], ['bolt', C.blue, a.commitsYear, 'COMMITS'],
-    ['merge', C.purple, a.prs, 'PULL REQUESTS'], ['bug', C.red, a.issues, 'ISSUES'],
-    ['star', C.orange, s.stars, 'STARS EARNED'], ['fire', C.red, s.current, 'CURRENT STREAK'],
-    ['fire', C.orange, s.longest, 'LONGEST STREAK'], ['gem', C.blue, s.xp, 'TOTAL XP'],
+    ['calendar', C.green, s.contrib, 'CONTRIBS'], ['bolt', C.blue, a.commitsYear, 'COMMITS'],
+    ['merge', C.purple, a.prs, 'PULL REQS'], ['bug', C.red, a.issues, 'ISSUES'],
+    ['star', C.orange, s.stars, 'STARS'], ['fire', C.red, s.current, 'STREAK NOW'],
+    ['fire', C.orange, s.longest, 'MAX STREAK'], ['gem', C.blue, s.xp, 'TOTAL XP'],
   ];
+  const rows = tiles.length / 2, ny = y0 + rows * (th + gap);
+  const h = ny + 64;
   let b = P.win(0, 0, w, h, C.paper);
   tiles.forEach(([ic, col, val, label], i) => {
-    const x = x0 + (i % 4) * (tw + gap), y = 24 + Math.floor(i / 4) * (th + gap);
+    const x = x0 + (i % 2) * (tw + gap), y = y0 + Math.floor(i / 2) * (th + gap);
     b += P.box(x, y, tw, th, 4, C.slot);
-    b += P.icon(ic, x + 14, y + 16, 4, col);
-    b += P.plain(P.fit(String(val), 4, tw - 70), x + 56, y + 14, 4, INK);
-    b += P.plain(P.fit(label, 2, tw - 24), x + 14, y + 56, 2, C.grey);
+    b += P.icon(ic, x + 16, y + 16, 5, col);
+    b += P.plain(P.fit(String(val), 5, tw - 90), x + 76, y + 14, 5, INK);
+    b += P.plain(P.fit(label, 3, tw - 92), x + 76, y + 60, 3, C.grey);
   });
-  b += P.plain('CONTRIBUTIONS, COMMITS AND STREAKS: LAST 365 DAYS', x0, 222, 2, C.lgrey);
-  b += P.plain('XP = CONTRIBUTION X10 + STAR X50 + REPO X20 + FOLLOWER X20', x0, 242, 2, C.lgrey);
+  b += P.plain('CONTRIBS, COMMITS, STREAKS: LAST 365 DAYS', x0, ny + 2, 2, C.grey);
+  b += P.plain('XP = CONTRIB X10 + STAR X50 + REPO X20 + FAN X20', x0, ny + 24, 2, C.grey);
   return P.svg(w + 6, h + 6, b, `Stats: ${s.contrib} contributions, ${s.stars} stars, ${s.current}-day streak`);
+}
+
+const MEDAL = ['RR......BB', '.RR....BB.', '..RR..BB..', '...RRBB...', '..KKKKKK..', '.KYYYYYYK.', 'KYYWYYYYOK',
+  'KYWYYYYYOK', 'KYYYYYYYOK', 'KYYYYYYOOK', '.KYYYYOOK.', '..KKKKKK..'];
+const LOCK = ['.KKK.', 'K...K', 'KKKKK', 'KK.KK', 'KKKKK'];
+function achievements(s) {
+  const w = CW, col = 200, rowH = 84, x0 = 18, y0 = 72;
+  const list = s.achievements, got = list.filter(a => a[2]).length;
+  const h = y0 + Math.ceil(list.length / 3) * rowH + 6;
+  let b = P.win(0, 0, w, h, C.paper) + band(w, 'TROPHY ROOM', `${got}/${list.length}`, got ? C.yellow : C.lgrey, false);
+  list.forEach(([name, req, ok, ribbon], i) => {
+    const x = x0 + (i % 3) * col, y = y0 + Math.floor(i / 3) * rowH;
+    const pal = ok
+      ? { R: ribbon, B: darken(ribbon, 0.7), K: INK, Y: C.yellow, W: C.paper, O: C.orange }
+      : { R: C.lgrey, B: C.lgrey, K: C.lgrey, Y: C.slot, W: C.slot, O: C.slot };
+    b += ok ? `<g class="${i % 2 ? '' : 'bob'}">${P.sprite(MEDAL, pal, x, y, 4)}</g>` : P.sprite(MEDAL, pal, x, y, 4) + P.sprite(LOCK, { K: C.grey }, x + 13, y + 26, 3);
+    b += P.plain(name, x + 50, y + 6, 3, ok ? INK : C.lgrey);
+    b += P.plain(req, x + 50, y + 36, 2, ok ? C.grey : C.lgrey);
+  });
+  return P.svg(w + 6, h + 6, b, `Achievements ${got}/${list.length}: ` + list.filter(a => a[2]).map(a => a[0]).join(', '));
 }
 
 const LEVEL = { NONE: '#ebedf0', FIRST_QUARTILE: '#9be9a8', SECOND_QUARTILE: '#40c463', THIRD_QUARTILE: '#30a14e', FOURTH_QUARTILE: '#216e39' };
 function blackhole(s) {
   const cal = s.activity.calendar;
-  const W = 880, H = 270, CELL = 12, GAP = 3, STEP = CELL + GAP, T = 14;
+  const W = CW + 6, H = 250, CELL = 8, GAP = 3, STEP = CELL + GAP, T = 14;
   const weeks = cal.weeks.slice(-53);
-  const gw = weeks.length * STEP - GAP, gx = Math.round((W - gw) / 2), gy = 66;
+  const gw = weeks.length * STEP - GAP, gx = Math.round((W - 6 - gw) / 2), gy = 76;
   const cx = gx + gw / 2, cy = gy + (7 * STEP - GAP) / 2, maxD = Math.hypot(gw / 2, (7 * STEP) / 2);
   let cells = '';
   weeks.forEach((wk, wi) => wk.contributionDays.forEach(day => {
@@ -269,7 +316,7 @@ function blackhole(s) {
     const d = Math.hypot(x + 0.5, y + 0.5), px = `M${x * 4} ${y * 4}h4v4h-4z`;
     if (d <= 6) core += px; else if (d <= 7.4) ringPx += px; else if (d > 9.2 && d <= 10.2 && (x + y) % 2 === 0) halo += px;
   }
-  const total = cal.totalContributions, label = `${total} CONTRIBUTION${total === 1 ? '' : 'S'} IN THE LAST YEAR`;
+  const total = cal.totalContributions, label = `${total} CONTRIB${total === 1 ? '' : 'S'} / 365 DAYS`;
   const css = `<style>
 .o{transform-origin:${cx}px ${cy}px;animation:orbit ${T}s cubic-bezier(.55,0,.9,.5) infinite}
 .c{transform-box:fill-box;transform-origin:center;animation:fall ${T}s cubic-bezier(.55,0,.9,.5) infinite}
@@ -284,20 +331,18 @@ function blackhole(s) {
 @media (prefers-reduced-motion:reduce){.o,.c,.bh,.spin,.glow,.warn,.warn2{animation:none}.bh{transform:scale(0)}.warn{opacity:0}}
 </style>`;
   let b = P.win(0, 0, W - 6, H - 6, C.paper);
-  b += P.plain('CONTRIBUTION MAP', 28, 26, 3, INK);
-  const warn = '! EVENT HORIZON DETECTED';
-  b += `<g class="warn">${P.plain(warn, W - 34 - P.textW(warn, 2), 30, 2, C.red, 'warn2')}</g>`;
-  b += `<clipPath id="field"><rect x="10" y="${gy - 14}" width="${W - 26}" height="${7 * STEP - GAP + 28}"/></clipPath><g clip-path="url(#field)">`;
+  b += P.plain('CONTRIB MAP', 22, 22, 3, INK);
+  const warn = 'HORIZON!';
+  b += `<g class="warn">${P.plain(warn, W - 32 - P.textW(warn, 3), 22, 3, C.red, 'warn2')}</g>`;
+  b += `<clipPath id="field"><rect x="8" y="${gy - 24}" width="${W - 22}" height="${7 * STEP - GAP + 48}"/></clipPath><g clip-path="url(#field)">`;
   b += `<g class="bh"><g transform="translate(${cx} ${cy})"><g transform="scale(1 .38)"><g class="spin">${disk}</g></g>`;
   b += `<path fill="${C.lav}" opacity=".7" d="${halo}"/><path class="glow" fill="${C.orange}" d="${ringPx}"/><path fill="#000000" d="${core}"/></g></g>`;
   b += cells + '</g>';
-  const by = H - 52;
-  b += P.plain(label, 28, by, 2, C.grey);
-  const lx = W - 34 - (P.textW('LESS', 2) + 12 + 5 * 16 + 4 + P.textW('MORE', 2));
-  b += P.plain('LESS', lx, by, 2, C.grey);
-  Object.values(LEVEL).forEach((c, i) => (b += `<rect x="${lx + P.textW('LESS', 2) + 12 + i * 16}" y="${by + 1}" width="12" height="12" fill="${c}"/>`));
-  b += P.plain('MORE', lx + P.textW('LESS', 2) + 12 + 5 * 16 + 4, by, 2, C.grey);
-  return P.svg(W, H, b, label, css);
+  const by = H - 56;
+  b += P.plain(label, 22, by, 3, C.grey);
+  const lx = W - 32 - (5 * 18 - 4);
+  Object.values(LEVEL).forEach((c, i) => (b += `<rect x="${lx + i * 18}" y="${by + 3}" width="14" height="14" fill="${c}"/>`));
+  return P.svg(W, H, b, `${total} contributions in the last year`, css);
 }
 
 function footer() {
@@ -307,17 +352,20 @@ function footer() {
   b += P.skyBands(0, 0, W, GY) + P.cloud(60, 24, 3) + P.cloud(820, 18, 3) + P.ground(W, GY, H - GY, 29);
   b += P.robot(130, GY - 4 - P.ROBOT.length * 3, 3) + P.robot(W - 130 - 48, GY - 4 - P.ROBOT.length * 3, 3) + '</g>';
   const t1 = 'THANKS FOR PLAYING!';
-  b += P.logo(t1, (W - (t1.length * 28 - 8)) / 2, 28, 4, C.yellow);
-  b += P.plain('CONTINUE? 9', (W - P.textW('CONTINUE? 9', 2)) / 2, 84, 2, INK, 'blink');
+  b += P.logo(t1, (W - (t1.length * 35 - 10)) / 2, 26, 5, C.yellow);
+  b += P.plain('CONTINUE? 9', (W - P.textW('CONTINUE? 9', 3)) / 2, 82, 3, INK, 'blink');
   return P.svg(W, H, b, 'Thanks for playing!');
 }
 
 // ---------------- README ----------------
-function readme(s) {
+// section headers are shown at 80% so they stay smaller than the cards on a phone
+const hdr = (file, alt, files) => `<img src="./assets/${file}" width="${Math.round(/width="(\d+)"/.exec(files[file])[1] * 0.8)}" alt="${alt}" />`;
+function readme(s, files) {
   const L = s.user.login;
+  const card = (file, alt) => `<img src="./assets/${file}" width="640" alt="${P.esc(alt)}" />`;
   const qs = s.quests.length
-    ? s.quests.map((r, i) => `<a href="${r.url}"><img src="./assets/quest-${i + 1}.svg" width="100%" alt="QUEST ${i + 1}: ${P.esc(r.name)}" /></a>`).join('\n')
-    : '<img src="./assets/quest-none.svg" width="100%" alt="No quests yet" />';
+    ? s.quests.map((r, i) => `<a href="${r.url}">${card(`quest-${i + 1}.svg`, `QUEST ${i + 1}: ${r.name}`)}</a>`).join('\n')
+    : card('quest-none.svg', 'No quests yet');
   return `<!-- Generated by scripts/render.js from live GitHub data. Edit the script, not this file. -->
 <div align="center">
 
@@ -329,25 +377,29 @@ function readme(s) {
 
 <br />
 
-<img src="./assets/header-player.svg" height="50" alt="PLAYER INFO · 玩家信息" />
+${hdr('header-player.svg', 'PLAYER INFO · 玩家信息', files)}
 
-<img src="./assets/player.svg" width="100%" alt="${P.esc(s.displayName)}" />
+${card('player.svg', s.displayName)}
 
-<img src="./assets/header-inventory.svg" height="50" alt="INVENTORY · 装备栏" />
+${hdr('header-inventory.svg', 'INVENTORY · 装备栏', files)}
 
-<img src="./assets/inventory.svg" width="100%" alt="Languages" />
+${card('inventory.svg', 'Languages')}
 
-<img src="./assets/header-quests.svg" height="50" alt="QUEST LOG · 任务日志" />
+${hdr('header-quests.svg', 'QUEST LOG · 任务日志', files)}
 
 ${qs}
 
-<img src="./assets/header-stats.svg" height="50" alt="STATS · 角色属性" />
+${hdr('header-trophies.svg', 'TROPHIES · 成就', files)}
 
-<img src="./assets/stats.svg" width="100%" alt="Stats" />
+${card('achievements.svg', 'Achievements')}
 
-<img src="./assets/header-blackhole.svg" height="50" alt="BLACK HOLE · 贡献黑洞" />
+${hdr('header-stats.svg', 'STATS · 角色属性', files)}
 
-<img src="./assets/blackhole.svg" width="100%" alt="Contribution map being pulled into a pixel black hole" />
+${card('stats.svg', 'Stats')}
+
+${hdr('header-blackhole.svg', 'BLACK HOLE · 贡献黑洞', files)}
+
+${card('blackhole.svg', 'Contribution map being pulled into a pixel black hole')}
 
 <br />
 
@@ -359,23 +411,25 @@ ${qs}
 (async () => {
   const data = opt('--data') ? JSON.parse(fs.readFileSync(opt('--data'), 'utf8')) : await load();
   if (opt('--save')) fs.writeFileSync(opt('--save'), JSON.stringify(data, null, 1));
-  const s = derive(data);
+  const now = Date.now();
+  const s = derive(data, now);
   const dir = path.join(OUT, 'assets');
   fs.mkdirSync(dir, { recursive: true });
   for (const f of fs.readdirSync(dir)) if (/^quest-.*\.svg$/.test(f)) fs.unlinkSync(path.join(dir, f));
-  const now = Date.now();
   const files = {
     'banner.svg': banner(s), 'player.svg': player(s), 'inventory.svg': inventory(s), 'stats.svg': stats(s),
-    'blackhole.svg': blackhole(s), 'footer.svg': footer(),
+    'achievements.svg': achievements(s), 'blackhole.svg': blackhole(s), 'footer.svg': footer(),
     'header-player.svg': P.header('PLAYER INFO', 'heart', C.red, C.palePink, '玩家信息'),
     'header-inventory.svg': P.header('INVENTORY', 'gem', C.blue, C.paleBlue, '装备栏'),
     'header-quests.svg': P.header('QUEST LOG', 'sword', C.orange, C.paleYellow, '任务日志'),
+    'header-trophies.svg': P.header('TROPHIES', 'star', C.orange, C.paleYellow, '成就'),
     'header-stats.svg': P.header('STATS', 'chart', C.green, C.paleGreen, '角色属性'),
     'header-blackhole.svg': P.header('BLACK HOLE', 'hole', C.purple, C.palePurple, '贡献黑洞'),
   };
   s.quests.forEach((r, i) => (files[`quest-${i + 1}.svg`] = quest(r, i, now)));
   if (!s.quests.length) files['quest-none.svg'] = emptyQuest();
   for (const [n, c] of Object.entries(files)) fs.writeFileSync(path.join(dir, n), c);
-  fs.writeFileSync(path.join(OUT, 'README.md'), readme(s));
-  console.log(`rendered ${Object.keys(files).length} images for ${s.user.login}: LV ${s.lv} ${s.cls}, ${s.langs.length} languages, ${s.quests.length} quests`);
+  fs.writeFileSync(path.join(OUT, 'README.md'), readme(s, files));
+  const got = s.achievements.filter(a => a[2]).length;
+  console.log(`rendered ${Object.keys(files).length} images for ${s.user.login}: LV ${s.lv} ${s.cls}, ${s.langs.length} languages, ${s.quests.length} quests, ${got}/${s.achievements.length} trophies`);
 })().catch(e => { console.error(e); process.exit(1); });
