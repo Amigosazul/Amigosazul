@@ -292,7 +292,7 @@ function achievements(s) {
 const LEVEL = { NONE: '#ebedf0', FIRST_QUARTILE: '#9be9a8', SECOND_QUARTILE: '#40c463', THIRD_QUARTILE: '#30a14e', FOURTH_QUARTILE: '#216e39' };
 function blackhole(s) {
   const cal = s.activity.calendar;
-  const W = CW + 6, H = 250, CELL = 8, GAP = 3, STEP = CELL + GAP, T = 14;
+  const W = CW + 6, H = 250, CELL = 8, GAP = 3, STEP = CELL + GAP, T = 12;
   const weeks = cal.weeks.slice(-53);
   const gw = weeks.length * STEP - GAP, gx = Math.round((W - 6 - gw) / 2), gy = 76;
   const cx = gx + gw / 2, cy = gy + (7 * STEP - GAP) / 2, maxD = Math.hypot(gw / 2, (7 * STEP) / 2);
@@ -320,24 +320,26 @@ function blackhole(s) {
   const css = `<style>
 .o{transform-origin:${cx}px ${cy}px;animation:orbit ${T}s cubic-bezier(.55,0,.9,.5) infinite}
 .c{transform-box:fill-box;transform-origin:center;animation:fall ${T}s cubic-bezier(.55,0,.9,.5) infinite}
-@keyframes orbit{0%,35%{transform:rotate(0)}72%,90%{transform:rotate(-420deg)}90.01%,100%{transform:rotate(0)}}
-@keyframes fall{0%,35%{transform:translate(0,0) scale(1);opacity:1}72%{transform:translate(var(--dx),var(--dy)) scale(0) rotate(180deg);opacity:1}90%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}90.01%{transform:translate(0,0) scale(1);opacity:0}100%{transform:translate(0,0) scale(1);opacity:1}}
-.bh{transform-origin:${cx}px ${cy}px;animation:bh ${T}s ease-in-out infinite}
-@keyframes bh{0%,22%{transform:scale(0)}34%,72%{transform:scale(1)}80%{transform:scale(1.25)}88%{transform:scale(1)}96%,100%{transform:scale(0)}}
+@keyframes orbit{0%,16%{transform:rotate(0)}60%,80%{transform:rotate(-420deg)}80.01%,100%{transform:rotate(0)}}
+@keyframes fall{0%,16%{transform:translate(0,0) scale(1);opacity:1}60%{transform:translate(var(--dx),var(--dy)) scale(0) rotate(180deg);opacity:1}80%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}80.01%{transform:translate(0,0) scale(1);opacity:0}94%,100%{transform:translate(0,0) scale(1);opacity:1}}
+.bh{transform-origin:${cx}px ${cy}px;transform:scale(.6);animation:bh ${T}s ease-in-out infinite}
+@keyframes bh{0%,10%{transform:scale(.6)}24%,60%{transform:scale(1)}68%{transform:scale(1.3)}76%{transform:scale(1)}92%,100%{transform:scale(.6)}}
 .spin{animation:spin 3s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 .glow{animation:glow .5s steps(1) infinite}@keyframes glow{50%{opacity:.55}}
-.warn{animation:warn ${T}s steps(1) infinite}@keyframes warn{0%,30%{opacity:0}31%,88%{opacity:1}89%,100%{opacity:0}}
+.warn{animation:warn ${T}s steps(1) infinite}@keyframes warn{0%,15%{opacity:0}16%,78%{opacity:1}79%,100%{opacity:0}}
 .warn2{animation:blink .6s steps(1) infinite}@keyframes blink{50%{opacity:0}}
-@media (prefers-reduced-motion:reduce){.o,.c,.bh,.spin,.glow,.warn,.warn2{animation:none}.bh{transform:scale(0)}.warn{opacity:0}}
+@media (prefers-reduced-motion:reduce){.o,.c,.bh,.spin,.glow,.warn,.warn2{animation:none}.bh{transform:scale(.6)}.warn{opacity:0}}
 </style>`;
   let b = P.win(0, 0, W - 6, H - 6, C.paper);
   b += P.plain('CONTRIB MAP', 22, 22, 3, INK);
   const warn = 'HORIZON!';
   b += `<g class="warn">${P.plain(warn, W - 32 - P.textW(warn, 3), 22, 3, C.red, 'warn2')}</g>`;
   b += `<clipPath id="field"><rect x="8" y="${gy - 24}" width="${W - 22}" height="${7 * STEP - GAP + 48}"/></clipPath><g clip-path="url(#field)">`;
+  // the hole sits above the cells, so they vanish behind the event horizon; at rest it stays
+  // visible at 60% size, which is also what renderers without CSS animation show
+  b += cells;
   b += `<g class="bh"><g transform="translate(${cx} ${cy})"><g transform="scale(1 .38)"><g class="spin">${disk}</g></g>`;
-  b += `<path fill="${C.lav}" opacity=".7" d="${halo}"/><path class="glow" fill="${C.orange}" d="${ringPx}"/><path fill="#000000" d="${core}"/></g></g>`;
-  b += cells + '</g>';
+  b += `<path fill="${C.lav}" opacity=".7" d="${halo}"/><path class="glow" fill="${C.orange}" d="${ringPx}"/><path fill="#000000" d="${core}"/></g></g></g>`;
   const by = H - 56;
   b += P.plain(label, 22, by, 3, C.grey);
   const lx = W - 32 - (5 * 18 - 4);
