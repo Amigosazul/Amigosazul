@@ -20,8 +20,9 @@
 <img src="./assets/header-quests.svg" width="317" alt="QUEST LOG · 任务日志" />
 
 <a href="https://github.com/Amigosazul/AgosClip"><img src="./assets/quest-1.svg" width="640" alt="QUEST 1: AgosClip" /></a>
-<a href="https://github.com/Amigosazul/ChowLuck"><img src="./assets/quest-2.svg" width="640" alt="QUEST 2: ChowLuck" /></a>
-<a href="https://github.com/Amigosazul/Syzygy"><img src="./assets/quest-3.svg" width="640" alt="QUEST 3: Syzygy" /></a>
+<a href="https://github.com/Amigosazul/qing-jizhang-releases"><img src="./assets/quest-2.svg" width="640" alt="QUEST 2: qing-jizhang-releases" /></a>
+<a href="https://github.com/Amigosazul/ChowLuck"><img src="./assets/quest-3.svg" width="640" alt="QUEST 3: ChowLuck" /></a>
+<a href="https://github.com/Amigosazul/Syzygy"><img src="./assets/quest-4.svg" width="640" alt="QUEST 4: Syzygy" /></a>
 
 <img src="./assets/header-trophies.svg" width="266" alt="TROPHIES · 成就" />
 
